@@ -73,6 +73,11 @@ function Agent:_init(env, opt)
   self.tdErr = opt.Tensor(opt.batchSize, self.heads)
   self.VPrime = opt.Tensor(opt.batchSize, self.heads, 1)
 
+  -- Pop-Art variables
+  self.popArt = opt.popArt
+  self.W = 1--torch.eye(self.m):typeAs(self.QPrimes)
+  self.b = 0--opt.Tensor(self.m):zero()
+
   -- Validation variables
   self.valSize = opt.valSize
   self.valMemory = Experience(opt.valSize + 3, opt, true) -- Validation experience replay memory (with empty starting state...states...final transition...blank state)
@@ -289,7 +294,16 @@ function Agent:learn(x, indices, ISWeights)
   end
 
   -- Calculate TD-errors δ := ∆Q(s, a) = Y − Q(s, a)
-  self.tdErr = Y - QTaken
+  if self.popArt then
+    -- Compute new Pop-Art scale and shift
+    local mu = torch.mean(Y)
+    local Sigma = 1 / torch.add(Y, mu):abs():max() -- TODO: Torch.CudaTensor:csub is missing
+
+    -- Compute unnormalised error
+    self.tdErr = Y - self.W*QTaken - self.b
+  else
+    self.tdErr = Y - QTaken
+  end
 
   -- Calculate Advantage Learning update(s)
   if self.PALpha > 0 then
@@ -313,6 +327,7 @@ function Agent:learn(x, indices, ISWeights)
 
     -- Calculate Persistent Advantage Learning update ∆PALQ(s, a) := max[∆ALQ(s, a), δ − αPAL(V(s') − Q(s', a))]
     self.tdErr = torch.max(torch.cat(tdErrAL, self.tdErr:add(-(self.VPrime:add(-QPrime):mul(self.PALpha))), 3), 3):view(N, 1) -- tdErrPAL TODO: Torch.CudaTensor:csub is missing
+    -- TODO: Preserve original TD-error for Pop-Art update
   end
 
   -- Calculate loss
@@ -342,6 +357,19 @@ function Agent:learn(x, indices, ISWeights)
 
   -- Backpropagate (network accumulates gradients internally)
   self.policyNet:backward(states, QCurr)
+
+  -- Pop-Art update (normalised SGD algorithm)
+  if self.popArt then
+    print(Sigma)
+    local SigmaInv = Sigma:inverse()
+    print(Sigma)
+    self.dTheta:mul((SigmaInv*self.W):t()*SigmaInv)
+
+    -- Update W and b by SGD
+    self.W:add(self.optimParams.learningRate*self.tdErr*QTaken:t())
+    self.b:add(self.optimParams.learningRate*self.tdErr)
+  end
+
   -- Clip the L2 norm of the gradients
   if self.gradClip > 0 then
     self.policyNet:gradParamClip(self.gradClip)
