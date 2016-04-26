@@ -44,7 +44,7 @@ function Experience:_init(capacity, opt, isValidation)
   self.index = 1
   self.isFull = false
   self.size = 0
-
+  
   -- TD-error δ-based priorities
   self.priorityQueue = BinaryHeap(capacity) -- Stored at time t
   self.smallConst = 1e-6 -- Account for half precision
