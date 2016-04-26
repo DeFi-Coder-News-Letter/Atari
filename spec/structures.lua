@@ -66,9 +66,11 @@ function mytest.findMin()
   before()
   insertAll()
   tester:eq("number", type(heap:findMin()), "should have a 'findMin' member of type number")
-  tester:eq(min, heap:findMin(), "'findMin' should equal inserted min")
+  tester:assertGeneralEq(heap:findMin(), min, 0.2, "'findMin' should equal inserted min")
+  tester:assertlt(heap:findMin(), max, "'findMin' should be less than max")
   updateAll()
-  tester:eq(min, heap:findMin(), "'findMin' should equal updated min")
+  tester:assertGeneralEq(heap:findMin(), min, 0.4, "'findMin' should equal inserted min")
+  tester:assertlt(heap:findMin(), max, "'findMin' should be less than max")
 end
 
 function mytest.insert()
@@ -84,6 +86,7 @@ function mytest.insert()
   tester:eq(3, heap.size, "'size' should equal 3")
   -- Was it rebalanced to beginning?
   tester:eq(1, heap:getValueByVal(3), "'heap:getValueByVal(3)' should equal 1")
+  tester:eq(0.6, heap:findMax(), "'findMax' should equal 0.6")
 end
 
 function mytest.updateByVal()
@@ -92,12 +95,14 @@ function mytest.updateByVal()
   heap:insert(0.4, 2)
   heap:insert(0.6, 3)
   tester:eq(1, heap:getValueByVal(3), "'heap:getValueByVal(3)' should equal 1")
+  tester:eq(0.6, heap:findMax(), "'findMax' should equal 0.6")
   heap:updateByVal(2, 0.7, 2)
   -- Was it rebalanced to beginning?
   tester:eq(1, heap:getValueByVal(2), "'heap:getValueByVal(2)' should equal 1")
   tester:eq(3, heap.size, "'size' should equal 3")
+  tester:eq(0.7, heap:findMax(), "'findMax' should equal 0.7")
 end
 
 tester:add(mytest)
-tester:disable('findMin')
+--tester:disable('findMin')
 tester:run()

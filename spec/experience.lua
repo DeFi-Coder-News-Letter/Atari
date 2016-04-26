@@ -29,19 +29,31 @@ end
 -- Set up singleton global object for transferring step
 local globals = Singleton({step = 1}) -- Initial step
 
-experience = Experience(opt.memSize, opt)
+function begin()
+  experience = nil
+  experience = Experience(opt.memSize, opt)
+end
 
--- Insert
-for i = 1, size do
-  local reward = math.random(1000)/1000
-  local state = torch.Tensor(opt.nChannels, opt.height, opt.width):zero()
-  local terminal = false
-  local action = math.random(3)
-  experience:store(reward, state, terminal, action)
+function insertAll()
+  for i = 1, size do
+    local reward = math.random(500)/1000
+    local state = torch.Tensor(opt.nChannels, opt.height, opt.width):zero()
+    local terminal = false
+    local action = math.random(3)
+    experience:store(reward, state, terminal, action)
+  end
 end
 
 function mytest.sample()
+  begin()
+  insertAll()
   tester:eq("userdata", type(experience:sample(1)), "should have a 'sample' member of type userdata")
+
+  --local delta = opt.Tensor(opt.batchSize, 1):fill(0.5)
+  --experience:updatePriorities(experience.indices, delta)
+  --local indices, ISWeights = experience:sample(1)
+  --tester:eq(1, ISWeights[#ISWeights], "Last 'ISWeights' should equal 1")
+
 end
 
 --function mytest.findMax()
@@ -50,4 +62,5 @@ end
 --end
 
 tester:add(mytest)
+--tester:disable('sample')
 tester:run()
