@@ -165,7 +165,7 @@ function BinaryHeap:__tostring()
   local str = ''
   local level = -1
   local maxLevel = math.floor(math.log(self.size, 2))
-  
+
   -- Print each level
   for i = 1, self.size do
     -- Add a new line and spacing for each new level
