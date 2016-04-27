@@ -53,6 +53,18 @@ function binaryheap.getValueByVal()
   tester:eq("number", type(heap:getValueByVal(1)), "should have a 'getValueByVal' member of type number")
 end
 
+function binaryheap.checkChildren()
+  before()
+  insertAll()
+  for i = 1, size do
+    priorityLessThanEitherChild(i)
+  end
+  updateAll()
+  for i = 1, size do
+    priorityLessThanEitherChild(i)
+  end
+end
+
 function binaryheap.findMax()
   before()
   insertAll()
@@ -130,11 +142,11 @@ function priorityLessThanEitherChild(i)
   local priority = heap.array[i][1];
   if l <= heap.size then
     local priority_l = heap.array[l][1];
-    tester:assertlt(priority, priority_l, "Left child should be less than parent")
+    tester:assertlt(priority, priority_l, "Parent priority should be less than left child")
   end
   if r <= heap.size then
     local priority_r = heap.array[r][1];
-    tester:assertlt(priority, priority_r, "Right child should be less than parent")
+    tester:assertlt(priority, priority_r, "Parent priority should be less than right child")
   end
 end
 
